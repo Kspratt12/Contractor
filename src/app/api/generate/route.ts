@@ -2,42 +2,78 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { customerName, jobType, projectSize, materials, notes, optionalAddons } = body;
+  const { customerName, jobType, projectSize, materials, notes, optionalAddons, companyName } = body;
 
-  const prompt = `You are a professional contractor estimator.
+  const prompt = `You are a professional contractor estimator working for ${companyName || "a licensed contracting company"}.
 
 Write a clean, persuasive, homeowner-friendly proposal.
 
 Customer Name: ${customerName}
 Job Type: ${jobType}
 Project Size: ${projectSize}
-Materials: ${materials}
-Notes: ${notes}
+Materials: ${materials || "Standard materials"}
+Notes: ${notes || "None"}
 Optional Add-Ons: ${optionalAddons || "None"}
 
 Output the proposal with EXACTLY these section headers (each on its own line, followed by a colon):
 
 Project Summary:
-(write the project summary here)
+(write a warm, professional 2-3 sentence summary addressing the customer by name)
 
 Scope of Work:
-(write the scope of work here)
+(write detailed bullet points of every step involved, be specific to the job type)
 
 Materials and Labor:
-(write materials and labor breakdown here)
+(write itemized breakdown with realistic dollar amounts based on current market rates for this job type and size - include material line items and labor line items separately, then show subtotals)
 
 Total Estimated Cost:
-(write total estimated cost here)
+(write the total as a single dollar amount on the first line, then a breakdown line showing Materials + Labor = Total, then payment terms)
 
 Timeline:
-(write the timeline here)
+(write realistic timeline with start date, duration, milestones, and completion)
 
 Optional Add-Ons:
-(write optional add-ons here, or "None requested" if none)
+(if add-ons were provided, list each with a realistic price estimate. If none, write "No additional add-ons requested.")
 
-Make it professional, clear, and easy to understand. Use dollar amounts for costs. Be specific and detailed.`;
+IMPORTANT:
+- All dollar amounts must be realistic for the job type and project size
+- Material + Labor subtotals MUST add up exactly to the Total
+- Be specific to the trade (use correct terminology for ${jobType})
+- Keep it professional but conversational — this goes directly to a homeowner
+- Do NOT use markdown formatting, just plain text with dashes for bullet points`;
 
-  // Mock AI generation - replace with real AI API call (OpenAI, Anthropic, etc.)
+  // Try real AI first, fall back to mock
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  if (apiKey) {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const proposal = data.content[0]?.text;
+        if (proposal) {
+          return NextResponse.json({ proposal, ai: true });
+        }
+      }
+    } catch {
+      // Fall through to mock
+    }
+  }
+
+  // Mock fallback
   const proposal = generateMockProposal({
     customerName,
     jobType,
@@ -47,7 +83,7 @@ Make it professional, clear, and easy to understand. Use dollar amounts for cost
     optionalAddons,
   });
 
-  return NextResponse.json({ proposal });
+  return NextResponse.json({ proposal, ai: false });
 }
 
 interface ProposalInput {
@@ -62,13 +98,11 @@ interface ProposalInput {
 function generateMockProposal(input: ProposalInput): string {
   const { customerName, jobType, projectSize, materials, notes, optionalAddons } = input;
 
-  // Determine size multiplier for realistic pricing
   const sizeLower = projectSize.toLowerCase();
   const sizeMultiplier = sizeLower.includes("large") ? 2.5
     : sizeLower.includes("small") ? 0.7
     : 1.0;
 
-  // Calculate costs that actually add up
   const laborInstallation = Math.floor(3200 * sizeMultiplier);
   const sitePrep = Math.floor(480 * sizeMultiplier);
   const projectMgmt = Math.floor(320 * sizeMultiplier);
@@ -76,12 +110,10 @@ function generateMockProposal(input: ProposalInput): string {
   const totalLabor = laborInstallation + sitePrep + projectMgmt;
   const totalCost = totalLabor + materialCost;
 
-  // Build materials list from user input
   const materialsList = materials
     ? materials.split(",").map((m: string) => `  - ${m.trim()}`).join("\n")
     : "  - Standard materials as required for the project";
 
-  // Determine timeline based on size
   const duration = sizeLower.includes("large") ? "3-4 weeks"
     : sizeLower.includes("small") ? "3-5 days"
     : "1-2 weeks";

@@ -367,18 +367,24 @@ export default function LandingPage() {
               </div>
               <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Pro</div>
               <div className="flex items-baseline justify-center gap-1 mb-2">
-                <span className="text-5xl font-extrabold text-slate-900">$29</span>
+                <span className="text-5xl font-extrabold text-slate-900">$199</span>
                 <span className="text-slate-500 text-lg">/month</span>
               </div>
-              <p className="text-slate-500 mb-8">Everything to close more jobs.</p>
+              <p className="text-slate-500 mb-8">The complete system to run your business.</p>
 
               <ul className="text-left space-y-3 mb-10">
                 {[
                   "Unlimited proposals",
                   "E-signature collection",
-                  "Invoice generation",
-                  "Follow-up reminders",
-                  "Full proposal tracking",
+                  "Invoice generation & payments",
+                  "Customer CRM & job history",
+                  "Auto follow-up reminders",
+                  "Job scheduling & calendar",
+                  "Photo documentation",
+                  "Team / crew management",
+                  "Proposal analytics & close rates",
+                  "White-label branding",
+                  "Template library",
                   "Priority support",
                 ].map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">

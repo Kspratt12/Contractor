@@ -50,10 +50,13 @@ export default function InvoicePage() {
       customerEmail: p.customerEmail,
       jobType: p.jobType,
       totalAmount,
+      depositAmount: Math.floor(totalAmount * 0.5),
+      amountPaid: 0,
       status: "unpaid",
       createdAt: new Date().toISOString(),
       dueDate: dueDate.toISOString(),
       proposalText: p.proposalText,
+      payments: [],
     };
 
     saveInvoice(newInvoice);

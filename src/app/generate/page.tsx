@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from "jspdf";
+import AppShell from "@/components/AppShell";
 import { Proposal } from "@/lib/types";
-import { saveProposal, generateId } from "@/lib/storage";
+import { saveProposal, generateId, findOrCreateCustomer, getBrandSettings } from "@/lib/storage";
 
 interface ProposalSection {
   title: string;
@@ -53,17 +54,39 @@ function parseProposal(text: string): ProposalSection[] {
   return sections;
 }
 
-export default function GeneratePage() {
+function GeneratePageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({
     customerName: "",
     customerEmail: "",
+    customerPhone: "",
+    customerAddress: "",
     jobType: "",
     projectSize: "",
     materials: "",
     notes: "",
     optionalAddons: "",
   });
+
+  // Load template params
+  useEffect(() => {
+    const jobType = searchParams.get("jobType");
+    const projectSize = searchParams.get("projectSize");
+    const materials = searchParams.get("materials");
+    const notes = searchParams.get("notes");
+    const optionalAddons = searchParams.get("optionalAddons");
+    if (jobType || projectSize || materials) {
+      setForm((prev) => ({
+        ...prev,
+        jobType: jobType || prev.jobType,
+        projectSize: projectSize || prev.projectSize,
+        materials: materials || prev.materials,
+        notes: notes || prev.notes,
+        optionalAddons: optionalAddons || prev.optionalAddons,
+      }));
+    }
+  }, [searchParams]);
   const [proposal, setProposal] = useState("");
   const [savedId, setSavedId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -85,21 +108,28 @@ export default function GeneratePage() {
     setSavedId("");
 
     try {
+      const brand = getBrandSettings();
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, companyName: brand.companyName }),
       });
 
       const data = await res.json();
       setProposal(data.proposal);
 
+      // Create/link customer
+      const customer = findOrCreateCustomer(form.customerName, form.customerEmail, form.customerPhone, form.customerAddress);
+
       // Save to localStorage
       const id = generateId();
       const newProposal: Proposal = {
         id,
+        customerId: customer.id,
         customerName: form.customerName,
         customerEmail: form.customerEmail,
+        customerPhone: form.customerPhone,
+        customerAddress: form.customerAddress,
         jobType: form.jobType,
         projectSize: form.projectSize,
         materials: form.materials,
@@ -108,9 +138,18 @@ export default function GeneratePage() {
         proposalText: data.proposal,
         status: "draft",
         createdAt: new Date().toISOString(),
+        photos: [],
+        templateId: searchParams.get("templateId") || undefined,
       };
       saveProposal(newProposal);
       setSavedId(id);
+
+      // Update customer with proposal reference
+      if (!customer.proposalIds.includes(id)) {
+        customer.proposalIds.push(id);
+        const { saveCustomer } = await import("@/lib/storage");
+        saveCustomer(customer);
+      }
 
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -199,29 +238,8 @@ export default function GeneratePage() {
   const isFormValid = form.customerName && form.jobType && form.projectSize;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-slate-900">ProposalFlow</span>
-          </Link>
-          <Link
-            href="/dashboard"
-            className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 transition-colors"
-          >
-            Dashboard
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppShell>
+      <div className="p-4 sm:p-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Form */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 h-fit">
@@ -235,27 +253,19 @@ export default function GeneratePage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
                     Customer Name <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="customerName"
-                    value={form.customerName}
-                    onChange={handleChange}
-                    placeholder="John Smith"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  />
+                  <input type="text" name="customerName" value={form.customerName} onChange={handleChange} placeholder="John Smith" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Customer Email
-                  </label>
-                  <input
-                    type="email"
-                    name="customerEmail"
-                    value={form.customerEmail}
-                    onChange={handleChange}
-                    placeholder="john@email.com"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Customer Email</label>
+                  <input type="email" name="customerEmail" value={form.customerEmail} onChange={handleChange} placeholder="john@email.com" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
+                  <input type="tel" name="customerPhone" value={form.customerPhone} onChange={handleChange} placeholder="(555) 123-4567" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Address</label>
+                  <input type="text" name="customerAddress" value={form.customerAddress} onChange={handleChange} placeholder="123 Main St" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
                 </div>
               </div>
 
@@ -488,7 +498,15 @@ export default function GeneratePage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense>
+      <GeneratePageInner />
+    </Suspense>
   );
 }

@@ -248,49 +248,156 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Full Feature Set */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+            More than just proposals
+          </h2>
+          <p className="text-center text-slate-500 mb-14 max-w-xl mx-auto">
+            Everything you need from first estimate to final payment &mdash; in one tool.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                ),
+                title: "Shareable Links",
+                desc: "Send your customer a clean link. They view the full proposal on any device &mdash; no app download needed.",
+              },
+              {
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                ),
+                title: "E-Signature",
+                desc: "Customers sign right on the proposal page. No printing, scanning, or chasing signatures.",
+              },
+              {
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                ),
+                title: "Proposal Dashboard",
+                desc: "Track every proposal in one place. See which are draft, sent, viewed, signed, or invoiced.",
+              },
+              {
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                ),
+                title: "Follow-Up Reminders",
+                desc: "Get notified when a proposal has been sitting for 2+ days with no response. Never let a lead go cold.",
+              },
+              {
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                ),
+                title: "Invoice Generation",
+                desc: "Turn any signed proposal into a professional invoice with one click. Track paid vs. unpaid.",
+              },
+              {
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                ),
+                title: "PDF Export",
+                desc: "Download proposals and invoices as clean, branded PDFs. Ready to email, text, or print on site.",
+              },
+            ].map((feature, i) => (
+              <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    {feature.icon}
+                  </svg>
+                </div>
+                <h3 className="text-base font-semibold text-slate-900 mb-1.5">{feature.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: feature.desc }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
-      <section className="py-16 sm:py-24">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-16 sm:py-24 bg-slate-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
             Simple pricing. No surprises.
           </h2>
           <p className="text-slate-500 mb-12 max-w-md mx-auto">
-            One plan. Unlimited proposals. Cancel anytime.
+            Start free. Upgrade when you&apos;re ready.
           </p>
 
-          <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-600 p-8 sm:p-10 max-w-md mx-auto">
-            <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Pro Plan</div>
-            <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-5xl font-extrabold text-slate-900">$197</span>
-              <span className="text-slate-500 text-lg">/month</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Starter</div>
+              <div className="flex items-baseline justify-center gap-1 mb-2">
+                <span className="text-5xl font-extrabold text-slate-900">$0</span>
+                <span className="text-slate-500 text-lg">/month</span>
+              </div>
+              <p className="text-slate-500 mb-8">Try it out, no commitment.</p>
+
+              <ul className="text-left space-y-3 mb-10">
+                {[
+                  "5 proposals per month",
+                  "PDF download",
+                  "Shareable proposal links",
+                  "Basic dashboard",
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-slate-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/generate"
+                className="block w-full py-4 px-6 bg-white hover:bg-slate-50 text-slate-700 text-lg font-semibold rounded-xl transition-colors text-center border-2 border-slate-200"
+              >
+                Get Started Free
+              </Link>
             </div>
-            <p className="text-slate-500 mb-8">Everything you need to close more jobs.</p>
 
-            <ul className="text-left space-y-3 mb-10">
-              {[
-                "Unlimited proposals",
-                "PDF download & export",
-                "Custom job types & materials",
-                "Professional formatting",
-                "Copy & send in seconds",
-                "No contracts &mdash; cancel anytime",
-              ].map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-slate-700" dangerouslySetInnerHTML={{ __html: feature }} />
-                </li>
-              ))}
-            </ul>
+            {/* Pro Plan */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-600 p-8 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+                MOST POPULAR
+              </div>
+              <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Pro</div>
+              <div className="flex items-baseline justify-center gap-1 mb-2">
+                <span className="text-5xl font-extrabold text-slate-900">$29</span>
+                <span className="text-slate-500 text-lg">/month</span>
+              </div>
+              <p className="text-slate-500 mb-8">Everything to close more jobs.</p>
 
-            <Link
-              href="/generate"
-              className="block w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors text-center shadow-lg shadow-blue-600/25"
-            >
-              Start Free Trial
-            </Link>
-            <p className="text-xs text-slate-400 mt-3">7-day free trial. No credit card required.</p>
+              <ul className="text-left space-y-3 mb-10">
+                {[
+                  "Unlimited proposals",
+                  "E-signature collection",
+                  "Invoice generation",
+                  "Follow-up reminders",
+                  "Full proposal tracking",
+                  "Priority support",
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-slate-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/generate"
+                className="block w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors text-center shadow-lg shadow-blue-600/25"
+              >
+                Start Free Trial
+              </Link>
+              <p className="text-xs text-slate-400 mt-3">7-day free trial. No credit card required.</p>
+            </div>
           </div>
         </div>
       </section>

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
+import { Proposal } from "@/lib/types";
+import { saveProposal, generateId } from "@/lib/storage";
 
 interface ProposalSection {
   title: string;
@@ -49,9 +53,11 @@ function parseProposal(text: string): ProposalSection[] {
   return sections;
 }
 
-export default function Home() {
+export default function GeneratePage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     customerName: "",
+    customerEmail: "",
     jobType: "",
     projectSize: "",
     materials: "",
@@ -59,8 +65,10 @@ export default function Home() {
     optionalAddons: "",
   });
   const [proposal, setProposal] = useState("");
+  const [savedId, setSavedId] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
 
   const handleChange = (
@@ -74,6 +82,7 @@ export default function Home() {
 
     setLoading(true);
     setProposal("");
+    setSavedId("");
 
     try {
       const res = await fetch("/api/generate", {
@@ -84,6 +93,24 @@ export default function Home() {
 
       const data = await res.json();
       setProposal(data.proposal);
+
+      // Save to localStorage
+      const id = generateId();
+      const newProposal: Proposal = {
+        id,
+        customerName: form.customerName,
+        customerEmail: form.customerEmail,
+        jobType: form.jobType,
+        projectSize: form.projectSize,
+        materials: form.materials,
+        notes: form.notes,
+        optionalAddons: form.optionalAddons,
+        proposalText: data.proposal,
+        status: "draft",
+        createdAt: new Date().toISOString(),
+      };
+      saveProposal(newProposal);
+      setSavedId(id);
 
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,6 +126,13 @@ export default function Home() {
     await navigator.clipboard.writeText(proposal);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}/proposal/${savedId}`;
+    await navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleDownloadPDF = () => {
@@ -168,18 +202,21 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">ProposalFlow</h1>
-              <p className="text-sm text-slate-500">AI-Powered Contractor Proposals</p>
-            </div>
-          </div>
+            <span className="text-lg font-bold text-slate-900">ProposalFlow</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 transition-colors"
+          >
+            Dashboard
+          </Link>
         </div>
       </header>
 
@@ -193,18 +230,33 @@ export default function Home() {
             </h2>
 
             <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Customer Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="customerName"
-                  value={form.customerName}
-                  onChange={handleChange}
-                  placeholder="John Smith"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Customer Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="customerName"
+                    value={form.customerName}
+                    onChange={handleChange}
+                    placeholder="John Smith"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Customer Email
+                  </label>
+                  <input
+                    type="email"
+                    name="customerEmail"
+                    value={form.customerEmail}
+                    onChange={handleChange}
+                    placeholder="john@email.com"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
               </div>
 
               <div>
@@ -330,6 +382,27 @@ export default function Home() {
 
             {proposal && !loading && (
               <div className="space-y-4">
+                {/* Saved confirmation */}
+                {savedId && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="font-medium text-green-800 text-sm">Proposal saved to your dashboard</p>
+                      <p className="text-xs text-green-600 mt-0.5">
+                        Share the proposal link with your customer for e-signature.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => router.push("/dashboard")}
+                      className="text-xs font-medium text-green-700 hover:text-green-800 underline cursor-pointer whitespace-nowrap"
+                    >
+                      View Dashboard
+                    </button>
+                  </div>
+                )}
+
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold text-slate-900">
@@ -358,36 +431,58 @@ export default function Home() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <button
                     onClick={handleDownloadPDF}
-                    className="flex-1 py-3.5 px-6 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Download PDF
+                    PDF
                   </button>
                   <button
                     onClick={handleCopy}
-                    className="flex-1 py-3.5 px-6 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl border border-slate-300 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl border border-slate-300 transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm"
                   >
                     {copied ? (
                       <>
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                         Copied!
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        Copy Text
+                        Copy
                       </>
                     )}
                   </button>
+                  {savedId && (
+                    <button
+                      onClick={handleCopyLink}
+                      className="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      {linkCopied ? "Link Copied!" : "Share Link"}
+                    </button>
+                  )}
+                  {savedId && (
+                    <Link
+                      href="/dashboard"
+                      className="py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl border border-slate-300 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                      Dashboard
+                    </Link>
+                  )}
                 </div>
               </div>
             )}

@@ -62,11 +62,29 @@ interface ProposalInput {
 function generateMockProposal(input: ProposalInput): string {
   const { customerName, jobType, projectSize, materials, notes, optionalAddons } = input;
 
-  // Simulate realistic cost estimation
-  const baseCost = Math.floor(Math.random() * 5000) + 3000;
-  const laborCost = Math.floor(baseCost * 0.6);
-  const materialCost = baseCost - laborCost;
-  const totalCost = baseCost + Math.floor(Math.random() * 2000);
+  // Determine size multiplier for realistic pricing
+  const sizeLower = projectSize.toLowerCase();
+  const sizeMultiplier = sizeLower.includes("large") ? 2.5
+    : sizeLower.includes("small") ? 0.7
+    : 1.0;
+
+  // Calculate costs that actually add up
+  const laborInstallation = Math.floor(3200 * sizeMultiplier);
+  const sitePrep = Math.floor(480 * sizeMultiplier);
+  const projectMgmt = Math.floor(320 * sizeMultiplier);
+  const materialCost = Math.floor(2400 * sizeMultiplier);
+  const totalLabor = laborInstallation + sitePrep + projectMgmt;
+  const totalCost = totalLabor + materialCost;
+
+  // Build materials list from user input
+  const materialsList = materials
+    ? materials.split(",").map((m: string) => `  - ${m.trim()}`).join("\n")
+    : "  - Standard materials as required for the project";
+
+  // Determine timeline based on size
+  const duration = sizeLower.includes("large") ? "3-4 weeks"
+    : sizeLower.includes("small") ? "3-5 days"
+    : "1-2 weeks";
 
   return `Project Summary:
 We are pleased to present this proposal for ${customerName} regarding a ${jobType} project. This ${projectSize} scope project will be completed with high-quality craftsmanship and attention to detail, ensuring lasting results that exceed your expectations.
@@ -81,23 +99,27 @@ Scope of Work:
 
 Materials and Labor:
 Materials:
-${materials ? materials.split(",").map((m: string) => `  - ${m.trim()}`).join("\n") : "  - Standard materials as required for the project"}
-
-Labor:
-  - Skilled labor and installation: $${laborCost.toLocaleString()}
-  - Site preparation and cleanup: $${Math.floor(laborCost * 0.15).toLocaleString()}
-  - Project management: $${Math.floor(laborCost * 0.1).toLocaleString()}
+${materialsList}
 
 Material Costs: $${materialCost.toLocaleString()}
 
+Labor:
+  - Skilled labor and installation: $${laborInstallation.toLocaleString()}
+  - Site preparation and cleanup: $${sitePrep.toLocaleString()}
+  - Project management: $${projectMgmt.toLocaleString()}
+
+Labor Subtotal: $${totalLabor.toLocaleString()}
+
 Total Estimated Cost:
 $${totalCost.toLocaleString()}
+
+Breakdown: Materials ($${materialCost.toLocaleString()}) + Labor ($${totalLabor.toLocaleString()}) = $${totalCost.toLocaleString()}
 
 This estimate includes all materials, labor, permits (if applicable), and cleanup. Payment terms: 50% deposit upon acceptance, 50% upon completion.
 
 Timeline:
 - Project Start: Within 1-2 weeks of proposal acceptance
-- Estimated Duration: ${projectSize.toLowerCase().includes("large") ? "3-4 weeks" : projectSize.toLowerCase().includes("small") ? "3-5 days" : "1-2 weeks"}
+- Estimated Duration: ${duration}
 - Final Walkthrough: Upon completion
 - This timeline is weather-dependent for outdoor projects
 

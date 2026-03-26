@@ -120,6 +120,8 @@ export default function Home() {
     doc.setTextColor(120, 120, 120);
     doc.text(`Prepared for: ${form.customerName}`, margin, y);
     y += 5;
+    doc.text(`Job Type: ${form.jobType}  |  Project Size: ${form.projectSize}`, margin, y);
+    y += 5;
     doc.text(`Date: ${new Date().toLocaleDateString()}`, margin, y);
     y += 3;
 
